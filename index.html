@@ -27,11 +27,12 @@ input{width:120px}select{border-radius:999px}button{cursor:pointer}.ib{padding:2
 <div class="card er" id="wn" hidden>ذخیره در این مرورگر ممکن نیست؛ اطلاعات پس از بستن صفحه از بین می‌رود.</div>
 <div class="card" id="sum"></div>
 <div class="card" id="strip" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px"></div>
+<div class="card" id="sell"></div>
 <div class="tabs"><button id="t1" class="on">دارایی‌ها</button><button id="t2">قیمت‌ها</button></div>
 <div id="pa"><div id="gs"></div><div id="gp"></div></div>
 <div id="pb" hidden>
 <div class="card"><div class="h"><h2>قیمت‌ها</h2><button id="fx">دریافت قیمت آنلاین</button></div><small id="os" class="m"></small><div id="pr"></div></div>
-<details class="card"><summary><h2>منبع قیمت آنلاین</h2></summary><p class="m" style="margin:0 0 6px">قیمت‌ها از TGJU دریافت می‌شوند؛ فقط لینک صندوق طلا را در صورت نیاز اینجا بگذار.</p><div id="sr"></div></details>
+<details class="card"><summary><h2>منبع قیمت آنلاین</h2></summary><p class="m" style="margin:0 0 6px">قیمت‌ها از TGJU و قیمت صندوق طلا مستقیم از بورس (TSETMC) دریافت می‌شوند؛ لینک صندوق را فقط در صورت نیاز اینجا بگذار.</p><div id="sr"></div></details>
 <details class="card"><summary><h2>پشتیبان‌گیری</h2></summary><p class="m" style="margin:0 0 8px">اطلاعات فقط روی همین گوشی ذخیره می‌شود. گاهی فایل پشتیبان بگیر.</p><button id="ex">ذخیره فایل پشتیبان</button> <button id="im">بازیابی از فایل</button><input id="fi" type="file" accept=".json,application/json" hidden><p class="m" id="bm"></p></details>
 </div>
 <button id="fab" aria-label="افزودن دارایی">＋</button>
@@ -52,8 +53,8 @@ const KS=[['usd','دلار','تومان',0],['gbp','پوند','تومان',0],['
 const KN={nim:'نیم پهلوی',rob:'ربع پهلوی'},W0={nim:4.0665,rob:2.03225};
 const GT=['دستبند','النگو','گردنبند','گوشواره','انگشتر','سرویس','زنجیر','شکسته/آب‌شده','سایر'];
 const U='https://servatmandi.com/Entity/Summary/',CL={gold:'#e6b93a',coin:'#e8832a',cur:'#2fa878',fund:'#9b7ede'},LB={gold:'طلا',coin:'سکه',cur:'ارز',fund:'صندوق'};
-const TG='https://call2.tgju.org/ajax.json',TM={usd:'price_dollar_rl',gbp:'price_gbp',oz:'ons',g18:'geram18',fund:'ime_fund_ayar'};
-const S0=()=>({assets:[],mode:{},man:{},bub:{},w:{},on:{},src:{usd:U+'100000000001',gbp:U+'100000000008',oz:U+'10000000001901',g18:U+'5000000001102',fund:'https://servatmandi.com/TsetmcInstrument/Summary/34144395039913458'},ut:0,bk:0});
+const TG='https://call2.tgju.org/ajax.json',TM={usd:'price_dollar_rl',gbp:'price_gbp',oz:'ons',g18:'geram18',nim:'nim',rob:'rob',fund:'ime_fund_ayar'};
+const S0=()=>({assets:[],mode:{},man:{},bub:{},w:{},on:{},sell:{gold:1.33,coin:4,cur:1},src:{usd:U+'100000000001',gbp:U+'100000000008',oz:U+'10000000001901',g18:U+'5000000001102',fund:'https://servatmandi.com/TsetmcInstrument/Summary/34144395039913458'},ut:0,bk:0});
 let S=S0(),ed=null,rm=null,cat='gold';
 const W=k=>S.w[k]>0?S.w[k]:W0[k],cnt=a=>a.ct>0?a.ct:1,gk=a=>a.t;
 function P(k){const m=S.mode[k]||((k=='nim'||k=='rob')?'formula':'online');
@@ -63,6 +64,10 @@ function P(k){const m=S.mode[k]||((k=='nim'||k=='rob')?'formula':'online');
  return k=='g18'?g*.75:g*.9*W(k)}
 function val(a){const p=a.t=='gold'?P('g18'):a.t=='coin'?P(a.kd):a.t=='fund'?P('fund'):P(a.cc);if(!p)return null;
  return a.t=='gold'?cnt(a)*a.wt*a.kr/18*p:(a.t=='coin'||a.t=='fund')?cnt(a)*p:a.am*p}
+const SD0={gold:1.33,coin:4,cur:1},sd=k=>S.sell&&S.sell[k]!=null?S.sell[k]:SD0[k];
+function sellVal(a){if(a.t=='fund')return val(a);
+ if(a.t=='coin'){const m=S.on[a.kd],u=m>0?m*(1-sd('coin')/100):P(a.kd);return u?cnt(a)*u:null}
+ const v=val(a);return v==null?null:v*(1-sd(a.t=='gold'?'gold':'cur')/100)}
 function save(){try{localStorage.setItem('assets_v1',JSON.stringify(S))}catch(e){$('wn').hidden=false}}
 function render(){let tot=0,sub={gold:0,coin:0,cur:0,fund:0},miss=new Set,gw=0,ge=0,gc=0,by={},fu=0,fv=0;
  const rows=S.assets.map(a=>{const v=val(a);if(v==null)miss.add(a.t=='gold'?'g18':a.t=='coin'?a.kd:a.t=='fund'?'fund':a.cc);else{tot+=v;sub[gk(a)]+=v}
@@ -73,6 +78,8 @@ function render(){let tot=0,sub={gold:0,coin:0,cur:0,fund:0},miss=new Set,gw=0,g
  (miss.size?`<div class="er">قیمت ثبت‌نشده؛ در جمع نیامده: ${[...miss].map(k=>KS.find(x=>x[0]==k)[1]).join('، ')}</div>`:'')+
  `<small>${S.on.t?'آخرین دریافت آنلاین: '+new Date(S.on.t).toLocaleString('fa-IR'):'قیمت آنلاین هنوز دریافت نشده'}</small>`;
  $('strip').innerHTML=['usd','g18','nim','rob'].map(k=>{const p=P(k),l=KS.find(x=>x[0]==k)[1];return `<div style="min-width:0;text-align:center"><small>${l}</small><div style="font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p?f(p,k=='oz'?2:0):'—'}</div></div>`}).join('');
+ let st=0,ss={gold:0,coin:0,cur:0,fund:0};S.assets.forEach(a=>{const v=sellVal(a);if(v!=null){st+=v;ss[gk(a)]+=v}});
+ $('sell').innerHTML=S.assets.length?`<div class="m">ارزش فروش — اگر همین حالا بفروشی</div><div class="big2">${f(st)}</div><small>ارزش با قیمت‌های نمایشی ${f(tot)} · ${st>tot?'ارزش فروش '+f(st-tot)+' بیشتر است':'تفاوت '+f(tot-st)}</small>${Object.keys(ss).map(k=>ss[k]>0?`<div class="r h"><span>${LB[k]}</span><span>${f(ss[k])}</span></div>`:'').join('')}<div class="h" style="flex-wrap:wrap"><small>کسر فروش ٪: طلا <input type="number" inputmode="decimal" data-k="gold" data-f="sell" value="${sd('gold')}" style="width:58px"> سکه <input type="number" inputmode="decimal" data-k="coin" data-f="sell" value="${sd('coin')}" style="width:58px"> ارز <input type="number" inputmode="decimal" data-k="cur" data-f="sell" value="${sd('cur')}" style="width:58px"></small></div><small class="m">طلا با عرف ۷۴۰ از ۷۵۰، سکه از قیمت بازار منهای اختلاف خرید و فروش، ارز منهای اختلاف صرافی؛ صندوق بدون کسر. برای سکه، ارزش فروش از قیمت فرمولی بالاتر است چون قیمت بازار سکه بالاتر از ارزش ذاتی آن است. درصدها را می‌توانی عوض کنی.</small>`:'';
  $('gs').innerHTML=(gc||fu)?`<div class="card"><div class="m">طلای شما</div>${gc?`<div class="big2">${f(gw,2)} گرم</div><small>معادل ${f(ge,2)} گرم ۱۸ عیار · ${f(gc)} قطعه</small>`:''}${fu?`<div><small>صندوق طلا: ${f(fu,2)} واحد · ${f(fv)} تومان</small></div>`:''}${gc?`<details><summary><small>به تفکیک نوع</small></summary>${Object.keys(by).map(g=>`<div class="r h"><span>${esc(g)} <small>(${f(by[g].c)} عدد)</small></span><span>${f(by[g].w,2)} گرم · ${f(by[g].v)}</span></div>`).join('')}</details>`:''}</div>`:'';
  const row=([a,v])=>`<div class="r"><div class="h"><b>${a.t=='gold'?esc(a.gt||'طلا'):a.t=='coin'?'سکه '+(KN[a.kd]||''):a.t=='fund'?'صندوق طلا':a.cc=='usd'?'دلار':'پوند'}${a.nm?' <small>· '+esc(a.nm)+'</small>':''}</b><span>${v==null?'—':f(v)}</span></div><div class="h"><small>${a.t=='gold'?f(cnt(a))+' عدد × '+f(a.wt,3)+' گرم · عیار '+f(a.kr,1):a.t=='coin'?f(cnt(a),2)+' عدد':a.t=='fund'?f(cnt(a),2)+' واحد':f(a.am,2)}</small><span><button class="ib" data-e="${a.id}">ویرایش</button> <button class="ib" data-d="${a.id}">${rm==a.id?'مطمئنی؟':'حذف'}</button></span></div></div>`;
  const gp=(t,l)=>{const x=rows.filter(r=>gk(r[0])==t);return x.length?`<details class="card" open><summary><h2>${l}</h2><b>${f(sub[t])}</b></summary>${x.map(row).join('')}</details>`:''};
@@ -99,14 +106,22 @@ async function grabJson(){let why='net';
    out[k]=k=='oz'?v:v/10;got++}
   if(got)return{out,stale};why='nf'}catch(e){}}
  return{why}}
+async function grabFund(){try{const c=new AbortController(),t=setTimeout(()=>c.abort(),20000);
+ const r=await fetch('https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/34144395039913458',{signal:c.signal});clearTimeout(t);
+ if(!r.ok)return{why:'http'+r.status};
+ const j=await r.json(),cp=j&&j.closingPriceInfo,v=cp&&(cp.pDrCotVal>0?cp.pDrCotVal:cp.pClosing);
+ return v>0?{v:v/10}:{why:'nf'}}catch(e){return{why:'net'}}}
 $('fx').onclick=async()=>{$('fx').disabled=true;$('os').textContent='در حال دریافت…';const ok=[],bad=[];
  const j=await grabJson();
  if(j.out){for(const k in j.out){S.on[k]=j.out[k];ok.push(k)}}else for(const k in TM)bad.push([k,j.why]);
  if(j.stale&&j.stale.length)for(const k of j.stale)bad.push([k,'stale']);
- if(!S.on.fund||j.stale&&j.stale.includes('fund')){if(S.src.fund){const r=await grab(S.src.fund);if(r.v){S.on.fund=r.v/10;ok.push('fund');const bi=bad.findIndex(b=>b[0]=='fund');if(bi>=0)bad.splice(bi,1)}else if(!bad.some(b=>b[0]=='fund'))bad.push(['fund',r.why])}}
+ if(!j.out||!j.out.fund){const fr=await grabFund(),unbad=()=>{const bi=bad.findIndex(b=>b[0]=='fund');if(bi>=0)bad.splice(bi,1)};
+  if(fr.v){S.on.fund=fr.v;ok.push('fund');unbad()}
+  else if(S.src.fund){const r=await grab(S.src.fund);if(r.v){S.on.fund=r.v/10;ok.push('fund');unbad()}else if(!bad.some(b=>b[0]=='fund'))bad.push(['fund',fr.why||r.why])}
+  else if(!bad.some(b=>b[0]=='fund'))bad.push(['fund',fr.why])}
  if(ok.length){S.on.t=Date.now();save()}$('fx').disabled=false;
  const why=w=>({net:'اتصال برقرار نشد',nf:'قیمت در صفحه پیدا نشد',stale:'قیمت صندوق قدیمی است؛ دستی وارد کن'}[w]||'خطای سایت '+w),bt=bad.map(([k,w])=>KS.find(x=>x[0]==k)[1]+' ('+why(w)+')').join('، ');
- $('os').textContent=ok.length?ok.map(k=>KS.find(x=>x[0]==k)[1]+': '+f(S.on[k],k=='oz'?2:0)).join(' · ')+(bt?' · ناموفق: '+bt:''):'دریافت ناموفق: '+bt;render()};
+ const osk=ok.filter(k=>k!='nim'&&k!='rob');$('os').textContent=osk.length?osk.map(k=>KS.find(x=>x[0]==k)[1]+': '+f(S.on[k],k=='oz'?2:0)).join(' · ')+(bt?' · ناموفق: '+bt:''):ok.length?'قیمت بازار سکه برای ارزش فروش دریافت شد'+(bt?' · ناموفق: '+bt:''):'دریافت ناموفق: '+bt;render()};
 document.addEventListener('change',e=>{const t=e.target,k=t.dataset.k;
  if(t.dataset.s){S.src[t.dataset.s]=t.value.trim();save();return}
  if(!k)return;if(t.dataset.f=='m')S.mode[k]=t.value;else S[t.dataset.f][k]=n(t.value);save();render()});
